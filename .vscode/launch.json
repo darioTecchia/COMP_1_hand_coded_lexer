@@ -1,0 +1,11 @@
+{
+  "configurations": [
+    {
+      "type": "java",
+      "name": "CodeLens (Launch) - Tester",
+      "request": "launch",
+      "mainClass": "Tester",
+      "projectName": "Esercitazione1"
+    }
+  ]
+}
