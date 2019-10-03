@@ -12,19 +12,19 @@ public class Lexer {
   private static HashMap<String, Token> stringTable; // la struttura dati potrebbe essere una hash map
 
   private int state;
-  private int begin = 0;
   private int forward = 0;
 
-  private static boolean DEBUG = false;
+  private static boolean DEBUG = true;
 
   public Lexer() {
     // la symbol table in questo caso la chiamiamo stringTable
     stringTable = new HashMap<String, Token>();
     state = 0;
-    stringTable.put("if", new Token("IF")); // inserimento delle parole chiavi nella stringTable per evitare di scrivere
-                                            // un diagramma di transizione per ciascuna di esse (le parole chiavi
-                                            // verranno "catturate" dal diagramma di transizione e gestite e di
-                                            // conseguenza). IF poteva anche essere associato ad una costante numerica
+    // inserimento delle parole chiavi nella stringTable per evitare di scrivere
+    // un diagramma di transizione per ciascuna di esse (le parole chiavi
+    // verranno "catturate" dal diagramma di transizione e gestite e di
+    // conseguenza). IF poteva anche essere associato ad una costante numerica
+    stringTable.put("if", new Token("IF"));
     stringTable.put("then", new Token("THEN"));
     stringTable.put("else", new Token("ELSE"));
     stringTable.put("while", new Token("WHILE"));
@@ -78,7 +78,7 @@ public class Lexer {
       switch (state) {
         case 0:
           if(c == '\n' || c == '\t' || c == ' ') {
-            state = 1;
+            state = 2;
             // lessema += c;
           } else {
             state = 3;
@@ -90,14 +90,15 @@ public class Lexer {
             state = 1;
             // lessema += c;
           } else {
-            state = 2;
+            state = 3;
           }
           break;
 
         case 2:
           state = 3;
-          retrack();
-          break;
+          // retrack();
+          return null;
+          // break;
       }
 
       // IDs
@@ -182,10 +183,10 @@ public class Lexer {
             lessema += c;
             // controlla se è finito il file
             if(actualChar== -1){
-              return new Token("NUMBER", lessema);
+              return new Token("NUM", lessema);
             }
           } else {
-            System.out.println("ERROR invalid token: " + lessema);
+            fail(14, lessema);
           }
           break;
 
@@ -195,14 +196,14 @@ public class Lexer {
             lessema += c;
             // controlla se è finito il file
             if(actualChar== -1){
-              return new Token("NUMBER", lessema);
+              return new Token("NUM", lessema);
             }
           } else if(c == 'E') {
             state = 10;
             lessema += c;
             // controlla se è finito il file
             if(actualChar== -1){
-              return new Token("NUMBER", lessema);
+              return new Token("NUM", lessema);
             }
           } else {
             state = 13;
@@ -214,16 +215,16 @@ public class Lexer {
             state = 12;
             lessema += c;
             if(actualChar== -1){
-              return new Token("NUMBER", lessema);
+              return new Token("NUM", lessema);
             }
           } else if(c == '+' || c == '-') {
             state = 11;
             lessema += c;
             if(actualChar== -1){
-              return new Token("NUMBER", lessema);
+              return new Token("NUM", lessema);
             }
           } else {
-            System.out.println("ERROR invalid token: " + lessema);
+            fail(14, lessema);
           }
           break;
 
@@ -232,10 +233,10 @@ public class Lexer {
             state = 12;
             lessema += c;
             if(actualChar== -1){
-              return new Token("NUMBER", lessema);
+              return new Token("NUM", lessema);
             }
           } else {
-            System.out.println("ERROR invalid token: " + lessema);
+            fail(14, lessema);
           }
           break;
 
@@ -244,7 +245,7 @@ public class Lexer {
             state = 12;
             lessema += c;
             if(actualChar== -1){
-              return new Token("NUMBER", lessema);
+              return new Token("NUM", lessema);
             }
           } else {
             state = 13;
@@ -254,7 +255,7 @@ public class Lexer {
         case 13:
           retrack();
           state = 14;
-          return new Token("NUMBER", lessema);
+          return new Token("NUM", lessema);
       }
 
       // SEPs
@@ -360,6 +361,11 @@ public class Lexer {
   private void retrack() {
     // fa il retract nel file di un carattere
     this.forward-=1;
+  }
+
+  private void fail(int nextState, String actualLessema) {
+    System.out.println("Error: " + actualLessema);
+    this.state = nextState;
   }
 
 }
