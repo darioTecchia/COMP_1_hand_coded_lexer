@@ -70,7 +70,7 @@ public class Lexer {
       
       if(DEBUG) {
         System.out.println("State: " + state);
-        System.out.println("\tLessema: '" + lessema + "'" + "\tchar: '" + c + "'");
+        System.out.println("\tLessema: '" + lessema + "'" + "\tchar: '" + c + "'\n");
       }
 
       // DELs
@@ -105,9 +105,6 @@ public class Lexer {
 					if(Character.isLetter(c)){
 						state = 4;
 						lessema += c;
-						// Nel caso in cui il file è terminato ma ho letto qualcosa di valido
-						// devo lanciare il token (altrimenti perderei l'ultimo token, troncato per l'EOF) 
-            // controlla se è finito il file
             if(actualChar == -1){
 							return installID(lessema);
 						}
@@ -232,119 +229,108 @@ public class Lexer {
 
       // SEPs
       switch (state) {
+
         case 16:
           if(c == '(') {
+            state = 17;
+            lessema += c;
+          } else if(c == ')') {
+            state = 18;
+            lessema += c;
+          } else if(c == '{') {
+            state = 19;
+            lessema += c;
+          } else if(c == '}') {
+            state = 20;
+            lessema += c;
+          } else if(c == ',') {
+            state = 21;
+            lessema += c;
+          } else if(c == ';') {
             state = 22;
-            return new Token("LPAR");
+            lessema += c;
           } else {
-            state = 22;
+            state = 23;
           }
           break;
 
         case 17:
-          if(c == ')') {
-            state = 22;
-            return new Token("RPAR");
-          } else {
-            state = 22;
-          }
-          break;
+          return new Token("LPAR");
 
         case 18:
-          if(c == '{') {
-            state = 22;
-            return new Token("LBRACE");
-          } else {
-            state = 22;
-          }
-          break;
+          return new Token("RPAR");
 
         case 19:
-          if(c == '}') {
-            state = 22;
-            return new Token("RBRACE");
-          } else {
-            state = 22;
-          }
-          break;
-
+          return new Token("LBRA");
+          
         case 20:
-          if(c == ',') {
-            state = 22;
-            return new Token("COMMA");
-          } else {
-            state = 22;
-          }
-          break;
-
+          return new Token("RBRA");
+        
         case 21:
-          if(c == ';') {
-            state = 22;
-            return new Token("SEMI");
-          } else {
-            state = 22;
-          }
-          break;
+          return new Token("COMMA");
+
+        case 22:
+          return new Token("SEMI");
       }
 
       // RELOP
       switch (state) {
 
-        case 22:
+        case 23:
           if(c == '<') {
-            state = 23;
+            state = 24;
             lessema += c;
           } else if(c == '=') {
-            state = 29;
-          } else if(c == '>') {
             state = 30;
+          } else if(c == '>') {
+            state = 31;
             lessema += c;
           }
           break;
 
-        case 23:
+        case 24:
           if(c == '=') {
-            state = 24;
-            lessema += c;
-          } else if(c == '>') {
             state = 25;
             lessema += c;
-          } else if(c == '-') {
+          } else if(c == '>') {
             state = 26;
+            lessema += c;
+          } else if(c == '-') {
+            state = 27;
             lessema += c;
           } else {
             state = 28;
           }
           break;
 
-        case 24:
+        case 25:
           lessema += c;
           return new Token("LE");
 
-        case 25:
+        case 26:
           lessema += c;
           return new Token("NE");
 
-        case 26:
+        case 27:
           if(c == '-') {
             lessema += c;
             state = 27;
           }
           break;
 
-        case 27:
+        case 28:
           lessema += c;
           return new Token("ASSIGN");
 
-        case 28:
+        case 29:
           retrack();
           return new Token("LT");
 
-        case 29:
+        case 30:
           lessema += c;
           return new Token("EQ");
 
-        case 30:
+        case 31:
           if(c == '=') {
             lessema += c;
             state = 31;
@@ -353,10 +339,10 @@ public class Lexer {
             state = 32;
           }
 
-        case 31:
+        case 32:
           return new Token("GE");
         
-        case 32:
+        case 33:
           retrack();
           return new Token("GT");
       }
