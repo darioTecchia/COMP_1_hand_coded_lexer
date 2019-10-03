@@ -96,8 +96,7 @@ public class Lexer {
         case 2:
           state = 3;
           // retrack();
-          return null;
-          // break;
+          break;
       }
 
       // IDs
@@ -162,15 +161,11 @@ public class Lexer {
           } else if(c == '.') {
             state = 8;
             lessema += c;
-            if(actualChar== -1){
-              return new Token("NUM", lessema);
-            }
           } else if(c == 'E') {
             state = 10;
             lessema += c;
-            if(actualChar== -1){
-              return new Token("NUM", lessema);
-            }
+          } else if(Character.isLetter(c)) {
+            fail(14, lessema);
           } else {
             state = 13;
           }
@@ -180,10 +175,6 @@ public class Lexer {
           if(Character.isDigit(c)){
             state = 9;
             lessema += c;
-            // controlla se è finito il file
-            if(actualChar== -1){
-              return new Token("NUM", lessema);
-            }
           } else {
             fail(14, lessema);
           }
@@ -316,30 +307,76 @@ public class Lexer {
 
       // RELOP
       switch (state) {
+
         case 20:
           if(c == '<') {
             state = 21;
+            lessema += c;
+          } else if(c == '=') {
+            state = 27;
+          } else if(c == '>') {
+            state = 28;
             lessema += c;
           }
           break;
 
         case 21:
-          if(c == '-') {
+          if(c == '=') {
             state = 22;
             lessema += c;
+          } else if(c == '>') {
+            state = 23;
+            lessema += c;
+          } else if(c == '-') {
+            state = 24;
+            lessema += c;
+          } else {
+            state = 26;
           }
           break;
 
         case 22:
+          lessema += c;
+          return new Token("LE");
+
+        case 23:
+          lessema += c;
+          return new Token("NE");
+
+        case 24:
           if(c == '-') {
-            state = 23;
             lessema += c;
+            state = 25;
           }
           break;
 
-        case 23:
-          retrack();
+        case 25:
+          lessema += c;
           return new Token("ASSIGN");
+
+        case 26:
+          retrack();
+          return new Token("LT");
+
+        case 27:
+          lessema += c;
+          return new Token("EQ");
+
+        case 28:
+          if(c == '=') {
+            lessema += c;
+            state = 29;
+          } else {
+            lessema += c;
+            state = 30;
+          }
+
+        case 29:
+          return new Token("GE");
+        
+        case 30:
+          retrack();
+          return new Token("GT");
       }
 		}
 	}
@@ -363,7 +400,7 @@ public class Lexer {
   }
 
   private void fail(int nextState, String actualLessema) {
-    System.out.println("Error: " + actualLessema);
+    System.out.println("Error, invalid token: '" + actualLessema + "'");
     this.state = nextState;
   }
 
