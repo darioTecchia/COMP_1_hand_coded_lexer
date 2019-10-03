@@ -29,7 +29,6 @@ public class Lexer {
     stringTable.put("else", new Token("ELSE"));
     stringTable.put("while", new Token("WHILE"));
     stringTable.put("int", new Token("INT"));
-    stringTable.put("int", new Token("INT"));
   }
 
   public Boolean initialize(String filePath) {
