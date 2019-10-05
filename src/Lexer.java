@@ -14,7 +14,7 @@ public class Lexer {
   private int state;
   private int forward = 0;
 
-  private static boolean DEBUG = true;
+  private static boolean DEBUG = false;
 
   public Lexer() {
     // la symbol table in questo caso la chiamiamo stringTable
@@ -73,279 +73,284 @@ public class Lexer {
         System.out.println("\tLessema: '" + lessema + "'" + "\tchar: '" + c + "'\n");
       }
 
-      // DELs
+      // RELOP
+      // states allocated from 0 to 50
       switch (state) {
+
         case 0:
-          if(c == '\n' || c == '\t' || c == ' ') {
+          if(c == '<') {
             state = 1;
             lessema += c;
-          } else {
+          } else if(c == '=') {
+            state = 7;
+          } else if(c == '>') {
             state = 3;
+            lessema += c;
+          } else {
+            state = 51;
           }
           break;
 
         case 1:
-          if(c == '\n' || c == '\t' || c == ' ') {
-            state = 1;
+          if(c == '=') {
+            state = 2;
+            lessema += c;
+          } else if(c == '>') {
+            state = 3;
+            lessema += c;
+          } else if(c == '-') {
+            state = 4;
             lessema += c;
           } else {
-            state = 3;
+            state = 6;
           }
           break;
 
         case 2:
-          state = 3;
-          retrack();
-          return null;
-      }
-
-      // IDs
-      switch(state){
-				case 3:
-					if(Character.isLetter(c)){
-						state = 4;
-						lessema += c;
-            if(actualChar == -1){
-							return installID(lessema);
-						}
-					} else {
-            state = 6;
-          }
-          break;
-					
-				case 4:
-					if(Character.isLetterOrDigit(c)){
-            state = 4;
-            lessema += c;
-            // controlla se è finito il file
-						if(actualChar == -1) {
-							return installID(lessema);
-            }
-					} else {
-						state = 5;
-          }
-          break;
-
-        case 5: 
-          state = 6;
-          retrack();
-          return installID(lessema);
-      }
-
-      // NUMs
-      switch(state){
-
-        case 6:
-          if(Character.isDigit(c)) {
-            state = 7;
-            lessema += c;
-            if(actualChar== -1){
-							return new Token("NUM", lessema);
-						} else {
-              state = 16;
-            }
-          }
-
-        case 7:
-          if(Character.isDigit(c)) {
-            state = 7;
-            lessema += c;
-            if(actualChar== -1){
-							return new Token("NUM", lessema);
-						} 
-          } else if(c == '.') {
-            state = 8;
-            lessema += c;
-          } else if(c == 'E') {
-            state = 10;
-            lessema += c;
-          } else {
-            state = 14;
-          }
-          break;
-
-        case 8:
-          if(Character.isDigit(c)) {
-            state = 9;
-            lessema += c;
-          }
-          break;
-
-        case 9:
-          if(Character.isDigit(c)) {
-            state = 9;
-            lessema += c;
-            if(actualChar== -1){
-							return new Token("NUM", lessema);
-						} 
-          } else if(c == 'E') {
-            state = 10;
-            lessema += c;
-          } else {
-            state = 15;
-          }
-          break;
-
-        case 10:
-          if(Character.isDigit(c)) {
-            state = 12;
-            lessema += c;
-          } else if(c == '+' || c == '-') {
-            state = 11;
-            lessema += c;
-          }
-          break;
-
-        case 11:
-          if(Character.isDigit(c)) {
-            state = 12;
-            lessema += c;
-          }
-          break;
-
-        case 12:
-          if(Character.isDigit(c)) {
-            state = 12;
-            lessema += c;
-            if(actualChar== -1){
-							return new Token("NUM", lessema);
-						}
-          } else {
-            state = 13;
-          }
-
-        case 13:
-          retrack();
-          return new Token("NUM", lessema);
-
-        case 14:
-          retrack();
-          return new Token("NUM", lessema);
-
-        case 15:
-          retrack();
-          return new Token("NUM", lessema);
-      }
-
-      // SEPs
-      switch (state) {
-
-        case 16:
-          if(c == '(') {
-            state = 17;
-            lessema += c;
-          } else if(c == ')') {
-            state = 18;
-            lessema += c;
-          } else if(c == '{') {
-            state = 19;
-            lessema += c;
-          } else if(c == '}') {
-            state = 20;
-            lessema += c;
-          } else if(c == ',') {
-            state = 21;
-            lessema += c;
-          } else if(c == ';') {
-            state = 22;
-            lessema += c;
-          } else {
-            state = 23;
-          }
-          break;
-
-        case 17:
-          return new Token("LPAR");
-
-        case 18:
-          return new Token("RPAR");
-
-        case 19:
-          return new Token("LBRA");
-          
-        case 20:
-          return new Token("RBRA");
-        
-        case 21:
-          return new Token("COMMA");
-
-        case 22:
-          return new Token("SEMI");
-      }
-
-      // RELOP
-      switch (state) {
-
-        case 23:
-          if(c == '<') {
-            state = 24;
-            lessema += c;
-          } else if(c == '=') {
-            state = 30;
-          } else if(c == '>') {
-            state = 31;
-            lessema += c;
-          }
-          break;
-
-        case 24:
-          if(c == '=') {
-            state = 25;
-            lessema += c;
-          } else if(c == '>') {
-            state = 26;
-            lessema += c;
-          } else if(c == '-') {
-            state = 27;
-            lessema += c;
-          } else {
-            state = 28;
-          }
-          break;
-
-        case 25:
           lessema += c;
           return new Token("LE");
 
-        case 26:
+        case 3:
           lessema += c;
           return new Token("NE");
 
-        case 27:
+        case 4:
           if(c == '-') {
             lessema += c;
-            state = 27;
+            state = 5;
           }
           break;
 
-        case 28:
+        case 5:
           lessema += c;
           return new Token("ASSIGN");
 
-        case 29:
+        case 6:
           retrack();
           return new Token("LT");
 
-        case 30:
+        case 7:
           lessema += c;
           return new Token("EQ");
 
-        case 31:
+        case 8:
           if(c == '=') {
             lessema += c;
-            state = 31;
+            state = 9;
           } else {
             lessema += c;
-            state = 32;
+            state = 10;
           }
 
-        case 32:
+        case 9:
           return new Token("GE");
         
-        case 33:
+        case 10:
           retrack();
           return new Token("GT");
-      }
+        }
+
+        // IDs
+        // states allocated from 51 to 100
+        switch(state){
+          case 51:
+            if(Character.isLetter(c)){
+              state = 52;
+              lessema += c;
+              if(actualChar == -1){
+                return installID(lessema);
+              }
+            } else {
+              state = 101;
+            }
+            break;
+            
+          case 52:
+            if(Character.isLetterOrDigit(c)){
+              state = 52;
+              lessema += c;
+              // controlla se è finito il file
+              if(actualChar == -1) {
+                return installID(lessema);
+              }
+            } else {
+              state = 53;
+            }
+            break;
+  
+          case 53: 
+            state = 101;
+            retrack();
+            return installID(lessema);
+        }
+
+        // NUM
+        // states allocated from 101 to 150
+        switch(state){
+
+          case 101:
+            if(Character.isDigit(c)) {
+              state = 102;
+              lessema += c;
+              if(actualChar== -1){
+                return new Token("NUM", lessema);
+              } else {
+                state = 151;
+              }
+            }
+  
+          case 102:
+            if(Character.isDigit(c)) {
+              state = 102;
+              lessema += c;
+              if(actualChar== -1){
+                return new Token("NUM", lessema);
+              } 
+            } else if(c == '.') {
+              state = 103;
+              lessema += c;
+            } else if(c == 'E') {
+              state = 105;
+              lessema += c;
+            } else {
+              state = 109;
+            }
+            break;
+  
+          case 103:
+            if(Character.isDigit(c)) {
+              state = 104;
+              lessema += c;
+            }
+            break;
+  
+          case 104:
+            if(Character.isDigit(c)) {
+              state = 104;
+              lessema += c;
+              if(actualChar== -1){
+                return new Token("NUM", lessema);
+              } 
+            } else if(c == 'E') {
+              state = 105;
+              lessema += c;
+            } else {
+              state = 110;
+            }
+            break;
+  
+          case 105:
+            if(Character.isDigit(c)) {
+              state = 107;
+              lessema += c;
+            } else if(c == '+' || c == '-') {
+              state = 106;
+              lessema += c;
+            }
+            break;
+  
+          case 106:
+            if(Character.isDigit(c)) {
+              state = 107;
+              lessema += c;
+            }
+            break;
+  
+          case 107:
+            if(Character.isDigit(c)) {
+              state = 107;
+              lessema += c;
+              if(actualChar== -1){
+                return new Token("NUM", lessema);
+              }
+            } else {
+              state = 108;
+            }
+  
+          case 108:
+            retrack();
+            return new Token("NUM", lessema);
+  
+          case 109:
+            retrack();
+            return new Token("NUM", lessema);
+  
+          case 110:
+            retrack();
+            return new Token("NUM", lessema);
+        }
+
+        // DELIMs
+        // states allocated from 151 to 200
+        switch (state) {
+          case 151:
+            if(c == '\n' || c == '\t' || c == ' ') {
+              state = 152;
+              // lessema += c;
+            } else {
+              state = 201;
+            }
+            break;
+  
+          case 152:
+            if(c == '\n' || c == '\t' || c == ' ') {
+              state = 152;
+              // lessema += c;
+            } else {
+              state = 201;
+            }
+            break;
+  
+          case 153:
+            retrack();
+            return null;
+        }
+
+        // SEP
+        // states allocated from 201 to 250
+        switch (state) {
+
+          case 201:
+            if(c == '(') {
+              state = 202;
+              lessema += c;
+            } else if(c == ')') {
+              state = 203;
+              lessema += c;
+            } else if(c == '{') {
+              state = 204;
+              lessema += c;
+            } else if(c == '}') {
+              state = 205;
+              lessema += c;
+            } else if(c == ',') {
+              state = 206;
+              lessema += c;
+            } else if(c == ';') {
+              state = 207;
+              lessema += c;
+            }
+            break;
+  
+          case 202:
+            return new Token("LPAR");
+  
+          case 203:
+            return new Token("RPAR");
+  
+          case 204:
+            return new Token("LBRA");
+            
+          case 205:
+            return new Token("RBRA");
+          
+          case 206:
+            return new Token("COMMA");
+  
+          case 207:
+            return new Token("SEMI");
+        }
+
 		}
 	}
 

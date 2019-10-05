@@ -4,10 +4,9 @@ public class Tester {
 	public static void main(String[] args) {
 
 		Lexer lexicalAnalyzer = new Lexer();
-		String filePath = "files/file_input.txt";
+		String filePath = args[0];
 
 		if (lexicalAnalyzer.initialize(filePath)) {
-
 			Token token;
 			try {
 				while ((token = lexicalAnalyzer.nextToken()) != null) {
