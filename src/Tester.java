@@ -1,7 +1,8 @@
+import java.io.IOException;
 
 public class Tester {
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 
 		Lexer lexicalAnalyzer = new Lexer();
 		String filePath = args[0];
