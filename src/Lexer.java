@@ -1,357 +1,279 @@
-import java.io.EOFException;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.util.HashMap;
+import java.util.Map;
 
 public class Lexer {
 
   private File input;
-  private RandomAccessFile ramFileReader;
-  private static HashMap<String, Token> stringTable; // la struttura dati potrebbe essere una hash map
-
+  private int forward;
   private int state;
-  private int forward = 0;
-
-  private static boolean DEBUG = false;
+  private static Map<String, Token> symbolTable;
+  private RandomAccessFile raf;
 
   public Lexer() {
-    // la symbol table in questo caso la chiamiamo stringTable
-    stringTable = new HashMap<String, Token>();
+    forward = 0;
     state = 0;
-    // inserimento delle parole chiavi nella stringTable per evitare di scrivere
-    // un diagramma di transizione per ciascuna di esse (le parole chiavi
-    // verranno "catturate" dal diagramma di transizione e gestite e di
-    // conseguenza). IF poteva anche essere associato ad una costante numerica
-    stringTable.put("if", new Token("IF"));
-    stringTable.put("then", new Token("THEN"));
-    stringTable.put("else", new Token("ELSE"));
-    stringTable.put("while", new Token("WHILE"));
-    stringTable.put("int", new Token("INT"));
+    symbolTable = new HashMap<String, Token>();
+    symbolTable.put("if", new Token("IF"));
+    symbolTable.put("then", new Token("THEN"));
+    symbolTable.put("else", new Token("ELSE"));
+    symbolTable.put("while", new Token("WHILE"));
+    symbolTable.put("int", new Token("INT"));
+    symbolTable.put("float", new Token("FLOAT"));
   }
 
-  public Boolean initialize(String filePath) {
+  // prepara file input per lettura e controlla errori
+  public boolean initialize(String filePath) throws IOException {
 
-    // prepara file input per lettura e controlla errori
-    this.input = new File(filePath);
-    try {
-      this.ramFileReader = new RandomAccessFile(this.input, "r");
-    } catch (FileNotFoundException e) {
-      return false;
-    }
-    return this.input.exists();
+    input = new File(filePath);
+    raf = new RandomAccessFile(input, "r");
+    return input.exists();
   }
 
   public int nextChar() throws IOException {
-    this.ramFileReader.seek(this.forward++);
-    return this.ramFileReader.read();
+    raf.seek(forward++);
+    return raf.read();
   }
 
   public Token nextToken() throws Exception {
-
-		//Ad ogni chiamata del lexer (nextToken())
-    //si resettano tutte le variabili utilizzate
-		this.state = 0;
-
-		String lessema = ""; //è il lessema riconosciuto
+    state = 0;
+    String lessema = "";
+    // legge un carattere da input e lancia eccezione quando incontra EOF per
+    // restituire null
+    // per indicare che non ci sono più token
+    int value;
     char c;
-    int actualChar;
+    while (true) {
 
-		while(true){
+      value = nextChar();
+      c = (char) value;
+      // relop
+      switch (state) {
+      case 0:
+        if (Character.isDigit(c)) {
+          state = 15;
+        } else if (Character.isLetter(c)) {
+          state = 12;
+        } else if (Character.isSpaceChar(c) || c == '\n' || c == '\t') {
+          state = 23;
+        } else if (c == '(' || c == ')' || c == '{' || c == '}' || c == ')' || c == ',' || c == ';') {
+          state = 24;
+        } else if (c == '<') {
+          state = 1;
+        } else if (c == '=') {
+          /* state=5 */
+          return new Token("RELOP", "EQ");
+        } else if (c == '>') {
+          state = 6;
+        } else if (value == -1) {
+          return null;
+        } else {
+          return new Token("ERROR", String.valueOf(c));
+        }
+        break;
 
-      // legge un carattere da input e lancia eccezione quando incontra EOF per restituire null
-      //  per indicare che non ci sono più token
-      actualChar = nextChar();
-      if(actualChar == -1) {
-        throw new EOFException();
+      case 1:
+        if (c == '=') {
+          /* state=2 */
+          return new Token("RELOP", "LE");
+        } else if (c == '>') {
+          /* state=3 */
+          return new Token("RELOP", "NE");
+        } else if (c == '-') {
+          state = 9;
+        } else {
+          retract();
+          return new Token("RELOP", "LT");
+        }
+        break;
+
+      case 6:
+        if (c == '=')
+          /* state=7 */
+          return new Token("RELOP", "GE");
+        else /* state=8; */ {
+          retract();
+          return new Token("RELOP", "GT");
+        }
+
+      case 9:
+        if (c == '-') {
+          return new Token("RELOP", "ASSIGN");
+        } else {
+          retract();
+          retract();
+          return new Token("RELOP", "LT");
+        }
+
       }
-      c = (char) actualChar;
 
-      if(DEBUG) {
-        System.out.println("State: " + state);
-        System.out.println("\tLessema: '" + lessema + "'" + "\tchar: '" + c + "'\t" + " Forward: " + forward);
-      }
-
-      // RELOP
-      // states allocated from 0 to 50
+      // switch ID
       switch (state) {
 
-        case 0:
-          if(c == '<') {
-            state = 1;
-            lessema += c;
-            break;
-          } else if(c == '=') {
-            state = 7;
-            break;
-          } else if(c == '>') {
-            state = 3;
-            lessema += c;
-            break;
-          } else {
-            state = 51;
-            break;
-          }
-
-        case 1:
-          if(c == '=') {
-            state = 2;
-            lessema += c;
-            break;
-          } else if(c == '>') {
-            state = 3;
-            lessema += c;
-            break;
-          } else if(c == '-') {
-            state = 4;
-            lessema += c;
-            break;
-          } else {
-            state = 6;
-            break;
-          }
-
-        case 2:
+      case 12:
+        if (Character.isLetter(c)) {
+          state = 13;
           lessema += c;
-          return new Token("LE");
-
-        case 3:
-          lessema += c;
-          return new Token("NE");
-
-        case 4:
-          if(c == '-') {
-            lessema += c;
-            state = 5;
-            break;
-          } else {
-            return new Token("INVALID", lessema);
-          }
-
-        case 5:
-          lessema += c;
-          return new Token("ASSIGN");
-
-        case 6:
-          retrack();
-          return new Token("LT");
-
-        case 7:
-          lessema += c;
-          return new Token("EQ");
-
-        case 8:
-          if(c == '=') {
-            lessema += c;
-            state = 9;
-            break;
-          } else {
-            lessema += c;
-            state = 10;
-            break;
-          }
-
-        case 9:
-          return new Token("GE");
-
-        case 10:
-          retrack();
-          return new Token("GT");
-        }
-
-        // IDs
-        // states allocated from 51 to 100
-        switch(state){
-          case 51:
-            if(Character.isLetter(c)){
-              state = 52;
-              lessema += c;
-              if(actualChar == -1){
-                return installID(lessema);
-              }
-              break;
-            } else {
-              state = 101;
-              break;
-            }
-
-          case 52:
-            if(Character.isLetterOrDigit(c)){
-              state = 52;
-              lessema += c;
-              if(actualChar == -1) {
-                return installID(lessema);
-              }
-              break;
-            } else {
-              state = 53;
-              break;
-            }
-
-          case 53:
-            state = 101;
-            retrack();
+          // Nel caso in cui il file è terminato ma ho letto qualcosa di valido
+          // devo lanciare il token (altrimenti perderei l'ultimo token, troncato per
+          // l'EOF)
+          if (value == -1) {
             return installID(lessema);
+          }
+        } else
+          state = 15;
+        break;
+
+      case 13:
+        if (Character.isLetterOrDigit(c)) {
+          lessema += c;
+          if (value == -1)
+            return installID(lessema);
+          break;
+        } else {
+          retract();
+          return installID(lessema);
         }
 
-        // NUM
-        // states allocated from 101 to 150
-        switch(state) {
+      }
 
-          case 101:
-            if(Character.isDigit(c)) {
-              state = 102;
-              lessema += c;
-              if(actualChar == -1){
-                return new Token("NUM", lessema);
-              }
-              break;
-            } else {
-              state = 151;
-              break;
-            }
+      // switc number
+      switch (state) {
+      case 15:
+        if (Character.isDigit(c)) {
+          state = 16;
+          lessema += c;
+        } else {
+          state = 23;
+        }
+        break;
 
-          case 102:
-            if(Character.isDigit(c)) {
-              state = 102;
-              lessema += c;
-              if(actualChar == -1) {
-                return new Token("NUM", lessema);
-              }
-              break;
-            } else if(c == '.') {
-              state = 103;
-              lessema += c;
-              break;
-            } else if(c == 'E') {
-              state = 105;
-              lessema += c;
-              break;
-            } else {
-              state = 109;
-              retrack();
-              return  new Token("NUM", lessema);
-            }
+      case 16:
+        if (Character.isDigit(c)) {
+          state = 16;
+          lessema += c;
+        } else if (c == '.') {
+          state = 17;
+          lessema += c;
+        } else if (value == -1) {
+          state = 23;
+          return new Token("NUM", lessema);
+        } else if (c == 'E') {
+          state = 19;
+          lessema += c;
+        } else {
+          retract();
+          return new Token("NUM", lessema);
+        }
+        break;
 
-          case 103:
-            if(Character.isDigit(c)) {
-              state = 104;
-              lessema += c;
-              break;
-            }
+      case 17:
+        if (Character.isDigit(c)) {
+          state = 18;
+          lessema += c;
+        } else if (value == -1)
+          return new Token("NUM", lessema);
+        else {
+          retract();
+          return new Token("NUM", lessema);
+        }
+        break;
 
-          case 104:
-            if(Character.isDigit(c)) {
-              state = 104;
-              lessema += c;
-              if(actualChar == -1) {
-                return new Token("NUM", lessema);
-              }
-              break;
-            } else if(c == 'E') {
-              state = 105;
-              lessema += c;
-              break;
-            } else {
-              state = 110;
-              retrack();
-              return new Token("NUM", lessema);
-            }
+      case 18:
+        if (Character.isDigit(c)) {
+          state = 18;
+          lessema += c;
+        } else if (value == -1)
+          return new Token("NUM", lessema);
+        else if (c == 'E') {
+          state = 19;
+          lessema += c;
+        } else {
+          retract();
+          return new Token("NUM", lessema);
+        }
+        break;
 
-          case 105:
-            if(Character.isDigit(c)) {
-              state = 107;
-              lessema += c;
-              break;
-            } else if(c == '+' || c == '-') {
-              state = 106;
-              lessema += c;
-              break;
-            }
+      case 19:
+        if (c == '+' || c == '-') {
+          state = 20;
+          lessema += c;
+        } else if (Character.isDigit(c)) {
+          state = 21;
+          lessema += c;
+        } else
+          state = 23;
+        break;
 
-          case 106:
-            if(Character.isDigit(c)) {
-              state = 107;
-              lessema += c;
-              break;
-            } else {
-              return  new Token("INVALID", lessema);
-            }
+      case 20:
+        if (Character.isDigit(c)) {
+          state = 21;
+          lessema += c;
+        }
+        break;
 
-          case 107:
-            if(Character.isDigit(c)) {
-              state = 107;
-              lessema += c;
-              if(actualChar == -1){
-                return new Token("NUM", lessema);
-              }
-              break;
-            } else {
-              state = 108;
-              retrack();
-              return new Token("NUM", lessema);
-            }
+      case 21:
+        if (Character.isDigit(c)) {
+          state = 21;
+          lessema += c;
+        } else {
+          retract();
+          return new Token("NUM", lessema);
+        }
+        break;
+
+      }
+
+      // switch Delimitatori
+      switch (state) {
+      case 23:
+        if (Character.isSpaceChar(c) || c == '\n' || c == '\t')
+          state = 23;
+        else
+          state = 24;
+        break;
+      }
+
+      // switch Separatori
+      switch (state) {
+
+      case 24:
+        if (c == '(')
+          return new Token("LPAR");
+        else if (c == ')')
+          return new Token("RPAR");
+        else if (c == '{')
+          return new Token("LBRA");
+        else if (c == '}')
+          return new Token("RBRA");
+        else if (c == ',')
+          return new Token("COMMA");
+        else if (c == ';')
+          return new Token("SEMI");
+        else {
+          retract();
+          state = 0;
         }
 
-        // DELIMs
-        // states allocated from 151 to 200
-        switch (state) {
-          case 151:
-            if(c == '\n' || c == '\t' || Character.isWhitespace(c)) {
-              state = 151;
-              break;
-            } else {
-              state = 201;
-              break;
-            }
-        }
+      }
 
-        // SEP
-        // states allocated from 201 to 250
-        switch (state) {
-
-          case 201:
-            if(c == '(') {
-              return new Token("LPAR");
-            } else if(c == ')') {
-              return new Token("RPAR");
-            } else if(c == '{') {
-              return new Token("LBRA");
-            } else if(c == '}') {
-              return new Token("RBRA");
-            } else if(c == ',') {
-              return new Token("COMMA");
-            } else if(c == ';') {
-              return new Token("SEMI");
-            }
-            break;
-        }
-
-		}
-	}
+    }
+  }
 
   private Token installID(String lessema) {
     Token token;
-
     // utilizzo come chiave della hashmap il lessema
-    if (stringTable.containsKey(lessema))
-      return stringTable.get(lessema);
+    if (symbolTable.containsKey(lessema))
+      return symbolTable.get(lessema);
     else {
       token = new Token("ID", lessema);
-      stringTable.put(lessema, token);
+      symbolTable.put(lessema, token);
       return token;
     }
   }
 
-  private void retrack() {
-    // fa il retract nel file di un carattere
-    this.forward-=1;
-  }
-
-  private void fail(int nextState, String actualLessema) {
-    System.out.println("Error, invalid token: '" + actualLessema + "'");
-    this.state = nextState;
+  private void retract() {
+    forward--;
   }
 
 }
