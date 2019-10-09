@@ -8,7 +8,7 @@ Programming language definited for the Compiler course from University.
 |------|------|---------|
 |**Delimiters**|
 |*-*|Any WS|-|
-|**Delimiters**|
+|**Separators**|
 |LPAR|(|-|
 |RPAR|)|-|
 |LBRA|{|-|
