@@ -47,7 +47,9 @@ public class Lexer {
 
       value = nextChar();
       c = (char) value;
-      // relop
+
+      // RELOP
+      // states for relop recognition
       switch (state) {
       case 0:
         if (Character.isDigit(c)) {
@@ -107,7 +109,8 @@ public class Lexer {
 
       }
 
-      // switch ID
+      // IDENTIFIERS
+      // states for IDs recognition
       switch (state) {
 
       case 12:
@@ -137,7 +140,8 @@ public class Lexer {
 
       }
 
-      // switc number
+      // NUM
+      // states for numbers recognition
       switch (state) {
       case 15:
         if (Character.isDigit(c)) {
@@ -224,7 +228,8 @@ public class Lexer {
 
       }
 
-      // switch Delimitatori
+      // DELIMs
+      // states for delimitators recognition
       switch (state) {
       case 23:
         if (Character.isSpaceChar(c) || c == '\n' || c == '\t')
@@ -234,7 +239,8 @@ public class Lexer {
         break;
       }
 
-      // switch Separatori
+      // SEPs
+      // states for separators recognition
       switch (state) {
 
       case 24:
