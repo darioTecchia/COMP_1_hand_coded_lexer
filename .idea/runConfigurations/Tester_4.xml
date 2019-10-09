@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Tester_4" type="Application" factoryName="Application">
     <option name="MAIN_CLASS_NAME" value="Tester" />
-    <module name="Esercitazione1" />
+    <module name="tecchia_sansone_es1_hcl" />
     <option name="PROGRAM_PARAMETERS" value="test_files/input4.txt" />
     <method v="2">
       <option name="Make" enabled="true" />
