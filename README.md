@@ -2,6 +2,9 @@
 
 Programming language definited for the Compiler course from University.
 
+### Project Part 1
+Hand Coded Lexer
+
 ## Lexical Specification
 
 |Token |Lexeme|Attribute|
